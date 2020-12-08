@@ -1,265 +1,490 @@
-# Dichotomous Rasch Models {#Dich_Rasch_model}
+# Dichotomous Rasch Model {#Dich_Rasch_model}
 
-This chapter provides a basic overview of the dichotomous Rasch model, along with guidance for analyzing data using the dichotomous Rasch model with R. At the end of the chapter, a challenge exercise and resources for further study are presented.
+This chapter provides a basic overview of the dichotomous Rasch model, along with guidance for analyzing data using the dichotomous Rasch model with R. We use a dataset from a transitive reasoning assessment reported by Sijtsma and Molenaar (2002) to illustrate the analysis using Marginal Maximum Likelihood Estimation (MMLE) and Joint Maximum Likelihood Estimation (JMLE). After the analyses are complete, we present an example description of the results in APA format. The chapter concludes with a challenge exercise and resources for further study.
 
 ## Dichotomous Rasch Model
 
-The dichotomous Rasch model (Rasch, 1960) is the simplest model in the Rasch family of models (Wright & Mok, 2004). It was designed for use with ordinal data that are scored in two categories (usually 0 or 1). The dichotomous Rasch model uses sum scores from these ordinal responses to calculate interval-level estimates that represent person locations (i.e., person ability or person achievement) and item locations (i.e., the difficulty to provide a correct or positive response) on a linear scale that represents the latent variable (the log-odds or "logit" scale). The difference between person and item locations can be used to calculate the probability for a correct or positive response (x = 1), rather than an incorrect or negative response (x = 0).
+The **dichotomous Rasch model** (Rasch, 1960) is the simplest model in the Rasch family of models (Wright & Mok, 2004). It was designed for use with ordinal data that are scored in two categories (usually 0 or 1). The dichotomous Rasch model uses sum scores from these ordinal responses to calculate interval-level estimates that represent person locations (i.e., person ability or person achievement) and item locations (i.e., the difficulty to provide a correct or positive response) on a linear scale that represents the latent variable (the log-odds or "logit" scale). The difference between person and item locations can be used to calculate the probability for a correct or positive response (x = 1), rather than an incorrect or negative response (x = 0).
 
 ### Model Equation
 
 The equation for the dichotomous Rasch model can be expressed in log-odds form as follows:
-
-$$\ln_{}{}\left[\frac{\phi_{n i 1}}{\phi_{n i 0}}\right]=\theta_{n}-\delta_{i}$$
+  
+  $$\ln_{}{}\left[\frac{\phi_{n i 1}}{\phi_{n i 0}}\right]=\theta_{n}-\delta_{i}$$
 
 The Rasch model predicts the probability of person *n* on item *i* providing a correct or positive (x = 1), rather than an incorrect or negative (x = 0) response, given a person’s “ability” (*θn*) and an item’s difficulty (*δi*), as expressed on the logit scale.
 
 ### Model Requirements
 
 Estimates that are calculated using the dichotomous Rasch model can only be meaningfully interpreted if there is evidence that the data approximate the requirements for the model. Key among dichotomous Rasch model requirements are the following:
-
-* Unidimensionality: A single latent variable is sufficient to explain most of the variation in item responses
-* Local independence: After controlling for the latent variable, there is no meaningful relationship between the responses to individual items
-* Person-invariant item estimates: Item locations do not depend on (i.e., are independent from) the persons whose responses are used to estimmate them
-* Item-invariant person estimates: Person locations  do not depend on (i.e., are independent from) the items used to estimate them
+  
+  * **Unidimensionality**: A single latent variable is sufficient to explain most of the variation in item responses
+  * **Local independence**: After controlling for the latent variable, there is no meaningful relationship between the responses to individual items
+  * **Person-invariant item estimates**: Item locations do not depend on (i.e., are independent from) the persons whose responses are used to estimmate them
+  * **Item-invariant person estimates**: Person locations  do not depend on (i.e., are independent from) the items used to estimate them
 
 Evidence that data approximate these requirements provides support for the meaningful interpretation and use of item and person estimates on the logit scale as indicators of item and person locations on the latent variable. In practice, many analysts evaluate these requirements using indicators of model-data fit for the facets in a Rasch model (in this case, items and persons). In the current chapter, we provide some basic code for calculating fit indices for items and persons. We explore this topic in more detail in Chapter 3.
 
 
-## R-Lab: Running Dichotomous Rasch Model in R
-### Understand the Data set
-In this example,we will be working with data from a transitive reasoning test, which is a reasoning test related to relationships among physical objects. The transitive reasoning data were collected from a one-on-one interactive assessment in which an experimenter presented students with a set of objects, such as sticks, balls, cubes, and discs. The following description is given in [Sijtsma and Molenaar](https://methods.sagepub.com/book/introduction-to-nonparametric-item-response-theory) (2002), pp. 31-32:
+## Running Dichotomous Rasch Model in R
 
+In the next section, we provide a step-by-step demonstration of a dichotomous Rasch model analysis using R. We encourage readers to use the example dataset that is provided in the online supplement to conduct the analysis along with us.
+
+### Example Data: Transitive Reasoning
+
+In this example,we will be working with data from a transitive reasoning test, which was designed to measure students' ability to reason about the relationships among physical objects. The transitive reasoning data were collected from a one-on-one interactive assessment in which an experimenter presented students with a set of objects, such as sticks, balls, cubes, and discs. The following description is given in [Sijtsma and Molenaar](https://methods.sagepub.com/book/introduction-to-nonparametric-item-response-theory) (2002), pp. 31-32:
+  
 > The items for transitive reasoning had the following structure. A typical item used three sticks, here denoted A, B, and C, of different length, denoted Y, such that YA < YB < YC. The actual test taking had the form of a conversation between experimenter and child in which the sticks were identified by their colors rather than letters. First, sticks A and B were presented to a child, who was allowed to pick them up and compare their lengths, for example, by placing them next to each other on a table. 
 
 > Next, sticks B and C were presented and compared. Then all three sticks were displayed in a random order at large mutual distances so that their length differences were imperceptible, and the child was asked to infer the relation between sticks A and C from his or her knowledge of the relationship in the other two pairs.
 
-The transitive reasoning items varied in terms of the property students were asked to reason about (length, weight, area). The tasks also varied in terms of the number of items students were asked to reason about, and whether the tasks involved equalities, inequalities, or a mixture of equalities and inequalities. The characteristics of the transitive reasoning data are summarized in the following table:
+The transitive reasoning items varied in terms of the property students were asked to reason about (length, weight, area). The tasks also varied in terms of the number of physical objects that students were asked to reason about, and whether the comparison tasks involved equalities, inequalities, or a mixture of equalities and inequalities. The characteristics of the transitive reasoning data are summarized in the following table:
+  
+  |Task|Property|Format|Objects|Measures|
+  | :--- | :---- |  :---- | :---- | :---- |
+  |1|Length|YA > YB > YC|Sticks|12, 11.5, 11 (cm)|
+  |2|Length|YA = YB = YC = YD |Tubes|12 (cm)|
+  |3|Weight|YA > YB > YC|Tubes|45, 25, 18 (g)|
+  |4|Weight|YA = YB = YC = YD|Cubes|65 (g)|
+  |5|Weight|YA < YB < YC|Balls|40, 50, 70 (g)|
+  |6|Area|YA > YB> YC|Discs|2.5, 7, 6.5 (diameter; cm)|
+  |7|Length|YA > YB = YC|Sticks|28.5, 27.5, 27.5 (cm)|
+  |8|Weight|YA >YB = YC|Balls|65, 40, 40 (g)|
+  |9|Length|YA = YB = YC = YD|Sticks|12.5, 12.5, 13, 13 (cm)|
+  |10|Weight|YA = YB < YC = YD|Balls|60, 60, 100, 100 (g)|
+  
+  
+### The TAM Package
 
-|Task|Property|Format|Objects|Measures|
-| :--- | :---- |  :---- | :---- | :---- |
-|1|Length|YA > YB > YC|Sticks|12, 11.5, 11 (cm)|
-|2|Length|YA = YB = YC = YD |Tubes|12 (cm)|
-|3|Weight|YA > YB > YC|Tubes|45, 25, 18 (g)|
-|4|Weight|YA = YB = YC = YD|Cubes|65 (g)|
-|5|Weight|YA < YB < YC|Balls|40, 50, 70 (g)|
-|6|Area|YA > YB> YC|Discs|2.5, 7, 6.5 (diameter; cm)|
-|7|Length|YA > YB = YC|Sticks|28.5, 27.5, 27.5 (cm)|
-|8|Weight|YA >YB = YC|Balls|65, 40, 40 (g)|
-|9|Length|YA = YB = YC = YD|Sticks|12.5, 12.5, 13, 13 (cm)|
-|10|Weight|YA = YB < YC = YD|Balls|60, 60, 100, 100 (g)|
+We will use the *"Test Analysis Modules"*, or "TAM" package (Robitzsch, Kiefer, & Wu, 2020) to run the dichotomous Rasch model analyses in this chapter. Although it is possible to use other R packages to conduct dichotomous Rasch model analyses, we have selected TAM because it produces results whose interpretation is relatively straightforward and that are relatively easy to work with.
 
+The TAM package applies marginal maximum likelihood estimation (MMLE) to estimate the dichotomous Rasch model. Please keep this estimation approach in mind when comparing the results between TAM and other R packages or software programs that use other estimation techniques, such as Winsteps (Linacre, 2020a) or Facets (Linacre, 2020b).
 
-### Prepare the R Packages for analysis
-In this session, we use the "TAM" package to do the Rasch Analysis. TAM is actually the abbreviation for *"Test Analysis Modules"*. Different from the *Winstep* software, it applies marginal maximum likelihood estimation (MMLE) instead of joint maximum likelihood estimation (JMLE).
-Note: Because of the different way of the estimation, the result might be slightly different with your *Winstep* outcomes.
-
-```{r message=FALSE, warning=FALSE}
-# Load the R package that we need for this analysis
-library("TAM") # For Dichotomous Rasch Analysis
-library("WrightMap") # For plotting the variable map
-library("Hmisc") # For descriptive data analysis
-library("formattable") # For format number as percentage
-```
-
-### Import the data & Running descriptive analysis
-```{r message=FALSE}
-library(readr) # Import the data from your computer
-transreas <- read_csv("transreas.csv")
-```
-Then,we run a descriptive analysis on our data.
+## Install and load the package:
+To get started with the TAM package, install and load it into your R environment using the following code:
 ```{r}
-# Use the summary() function to overview the data
+citation("TAM")
+install.packages("TAM")
+library("TAM")
+```
+
+To facilitate the example analysis, we will also use the *WrightMap* package (Torres Irribarra & Freund, 2014):
+  
+WrightMap:
+```{r}
+citation("WrightMap")
+install.packages("WrightMap")
+library("WrightMap") 
+```
+
+### Getting Started
+
+Now that we have installed and loaded the packages to our R session, we are ready to import the data. 
+
+In this book, we use the function read.csv() to import data that are stored using comma separated values. We encourage readers to use their preferred method for importing data files into R or R Studio.
+
+Please note that if you use read.csv() you will need to specify the file path to the location at which the data file is stored on your computer or set your working directory to the folder in which you have saved the data.
+
+First, we will import the data using read.csv() and store it in an object called *transreas*:
+
+```{r}
+transreas <- read.csv("transreas.csv")
+```
+
+Next, we will explore the data using descriptive statistics using the summary() function:
+```{r}
 summary(transreas)
-# From the result, we can see there is no missing data for each variable. And we can also get a general idea on the range of the grades (from 2 to 6), Min, Max, Median for each task. 
-# You can also use describe() function as an alternative approach
-describe(transreas)
-# The Mean for each task in this table is the Proportion Correct statistic for each item (item difficulty estimate for Classical Test Theory)
+```
+From the summary of *transreas*, we can see there are no missing data. We can also get a general sense of the scales, range, and distribution of each variable in the dataset.
+
+Specifically, we can see that Student ID numbers range from 1 to 425, student grade levels range from 2 to 6, and that all tasks have scores in both of the dichotomous categories (0 and 1). We can also get a sense for the range of item difficulty by examining the mean for each task, which is the proportion-correct statistic (item difficulty estimate for Classical Test Theory).
+
+
+### Run the Dichotomous Rasch Model
+
+To run the dichotomous Rasch Model using the TAM package, need to isolate the item response matrix from the other variables in the data (Student IDs and Grade level). 
+
+To do this, we will create an object made up of only the item responses by removing the first two variables from the data. We will remove the descriptive variables using the *subset()* function with the *select=* option. We will save the response matrix in a new object called *transreas.responses*:
+```{r}
+# Remove the Student ID and Grade level variables:
+transreas.responses <- subset(transreas, select = -c(Student, Grade))
 ```
 
-### Runing the Dichotomous Rasch Model with CML Method
-To run the dichotomous Rasch Model using the TAM package, we only need students' item-level responses. So the first and second column of our data are not needed. 
+Next, we will use *summary()* to calculate descriptive statistics for the *transreas.responses* object to check our work and ensure that the responses are ready for analysis:
 ```{r}
-# Trim the data
-Di_Rasch_data <- transreas[,c(-1,-2)]
-head(Di_Rasch_data) # Take a look
+# Check descriptive statistics:
+summary(transreas.responses)
 ```
+
+Now, we are ready to run the dichotomous Rasch model on the transitive reasoning response data We will use the *tam()* function to run the model and store the results in an object called *dichot.transreas*:
 
 ```{r results='hide'}
 # Running the Dichotomous Rasch Model
-Di_Rasch_model <- tam(Di_Rasch_data)
+dichot.transreas <- tam(transreas.responses)
 ```
+
+For brevity, we do not include all of the output from the model function in this book. However, after you run the model, you should see some output in the R console that includes information about each iteration in the estimation process.
+
+After you run the *tam()* function, your console will show estimates of item parameters (item difficulty locations), reliability estimates, and a summary of the time in which the analysis was completed. We will explore each of these results in more detail later.
 
 ### Overall Model Summary
 
+The next step is to request a summary of the model estimation results in order to begin to understand the results from the analysis.
+
+Request a summary of the dichotomous Rasch model results by applying the *summary()* function to the model object:
 ```{r}
-# Check the summary
-summary(Di_Rasch_model)
-# Plot the variable map 
-IRT.WrightMap(Di_Rasch_model,show.thr.lab=FALSE)
+# Request a summary of the model results
+summary(dichot.transreas)
 ```
 
-### Item Parameters
-First of all, let's pull out the item parameters from your model.
+From these results, we suggest taking a quick look at the Item Parameters as reported in the table labeled *Item Parameters in IRT parameterization.*
+
+Because we ran a Rasch model, the *alpha* (discrimination) parameters are fixed to a constant value of 1. The *beta* parameters are the item locations on the latent variable. We will explore the item locations in more detail later in the analysis.
+
+### Plot a Wright Map to visualize item and person locations:
+
+A useful feature of Rasch models is that when there is acceptable fit between the model and the data (discussed in detail in in Chapter 3), it is possible to visualize and compare item and person locations on a single linear continuum. Professor Bejamin D. Wright popularized an approach to displaying Rasch model results on a linear continuum, and this technique has been widely adopted by Rasch measurement researchers across disciplines.
+In his honor, these displays are often called *Wright Maps.* In the literature, researchers also refer to these displays as *Variable Maps*. Please see Wilson (2011) for a discussion of the term *Wright Map*.
+
+As the next step in our analysis, we will use the WrightMap package to create a Wright Map from our model results.
+
+We will create the plot using the function *IRT.WrightMap()* on the model object (*dichot.transreas*). We will set the option for displaying threshold labels as *FALSE*, because we are working with dichotomous data. We also used the *main.title=* option to customize the title of the plot.
+
 ```{r}
-difficulty <- Di_Rasch_model$xsi
-head(difficulty) 
-mean(difficulty$xsi) # The mean difficulty of the tasks is -1.936
-sd(difficulty$xsi) # The standard deviation for task difficulty is 1.56
-mean(difficulty$se.xsi) # The mean Standard Error for task difficulty is 0.171.
+# Plot the Wright Map 
+IRT.WrightMap(dichot.transreas, show.thr.lab=FALSE, main.title = "Transitive Reasoning Wright Map")
+```
+In this *Wright Map* display, the results from the dichotomous Rasch model analysis of the transitive reasoning data are summarized grapihcally. The figure is organized as follows:
+
+The left panel of the plot shows a histogram of respondent (person) locations on the logit scale that represents the latent variable. Units on the logit scale are shown on the far-right axis of the plot (labeled *Logits*). In the panel with the person locations, the label "Dim1" means that the distribution of person locations is specific to one dimension. In multi-dimensional Rasch model (Brigs & Wilson, 2003) and multidimensional IRT analyses (Bonifay, 2019; Reckase, 2009), the Wright Map can show multiple distributions of person locations that correspond to each dimension in the model.
+
+The large central panel of the plot shows the item locations (item difficulty estimates) on the logit scale that represents the latent variable. Light grey diamond shapes show the logit scale location of each item, as labeled on the x-axis.
+
+Even though it is not appropriate to fully interpret item and person locations on the logit scale until there is evidence of acceptable model-data fit, we recommend examining the Wright Map during the preliminary stages of an item analysis to get a general sense of the model results and to identify any potential scoring or data entry errors.
+
+A quick glance at the Wright Map suggests that, on average, the persons are located higher on the logit scale compared to the average item locations. In addition, there appears to be a relatively wide spread of person and item locations on the logit scale, such that the transitive reasoning test appears to be a useful tool for identifying differences in person locations and item locations on the latent variable.
+
+We will return to this display for more exploration after checking for acceptable model-data fit, among other psychometric properties.
+
+### Examine Item Parameters:
+As the next step in our analysis, we will examine the item parameters in detail. We will use the *$* operator to request the item location esitmates (*xsi*) from the *dichot.transreas* object and store the results in a new object called *difficulty*:
+```{r}
+difficulty <- dichot.transreas$xsi
 ```
 
-- The 'xsi' column denotes the item difficulty in a logit scale; 'se.xsi' is the standard error for each item. The standard error is an estimate of the precision of the item difficulty estimates, where larger standard errors indicate less precise estimates.
+By running this code, we have created a dataframe object that includes two variables: item difficulty estimates, which are labeled *xsi*, and standard errors, which are labeled *se.xsi*. The row labels show the item names from our response matrix.
 
-- Since the `xsi` indicates the item difficulty, higher values indicate more-difficult items (higher levels of the construct are required for a positive response). For instance, item 9 is the hardest item ( `xsi` = 1.00), whereas item 6 is the easiest item (`xsi` = -4.07).
-
-We can also visualize the item difficulty using a simple histogram
+Because this example dataset only includes 10 items, we can quickly examine the results by printing the *difficulty* object to the R console as follows:
 ```{r}
-hist(difficulty$xsi,breaks=10) 
+difficulty
 ```
 
-Now let's calculate the Item fit statistics
+Alternatively, we can examine the dataframe by clicking on it in the *Environment* pane of R Studio or by using the *View()* function with the *difficulty* object: 
 ```{r}
-Di_Item_fit <- tam.fit(Di_Rasch_model) 
-head(Di_Item_fit)
+View(difficulty)
 ```
+
+The item difficulty parameters (*xsi*) are the item location estimates on the logit scale that represents the latent variable. Assuming that the responses are scored such that lower scores (x = 0) indicate lower locations on the latent variable (e.g., incorrect, negative, or absent responses), then *lower* item estimates on the logit scale indicate items that are *more difficult* or require persons to have relatively *higher locations* on the construct to provide a correct response. On the other hand, *higher* item estimates on the logit scale indicate items that are *easier* or require persons to have relatively *lower locations* on the construct to provide a correct response. 
+
+In our analysis, Task 9 is the most difficult item (`xsi` = 1.00), whereas Task 6 is the easiest item (`xsi` = -4.07).
+
+The standard error (*se.xsi*) for each item is an estimate of the precision of the item difficulty estimates, where larger standard errors indicate less-precise estimates. Standard errors are reported on the same logit scale as item locations.
+
+In our analysis, the standard errors range from 0.11 for Task 9 and Task 10, which were the items with the most precise estimates, to 0.31 for Task 6, which was the item with the least precise estimate. These differences largely reflect differences in item targeting to the person locations (see the Wright Map above).
+
+## Descriptive Statistics for Item Locations
+
+Next, let's calculate descriptive statistics to better understand the distribution of the item locations and standard errors. We will do so using the *summary()* function and the *sd()* function:
+```{r}
+summary(difficulty)
+sd(difficulty$xsi)
+sd(difficulty$se.xsi)
+```
+
+We can also visualize the item difficulty estimates using a simple histogram by using the *hist()* function. In our plot, we specified a custom title using *main =* and a custom x-axis label using *xlab =*:
+```{r}
+hist(difficulty$xsi, main = "Histogram of Item Difficulty Estimates for the Transitive Reasoning Data",
+     xlab = "Item Difficulty Estimates in Logits") 
+```
+## Item Fit Statistics
+As a final step in our preliminary item analysis, we will conduct a brief exploration of item fit statistics. We explore item fit in more detail in Chapter 3 of this book.
+
+To calculate numeric item fit statistics, we will use the function *tam.fit()* from TAM on the model object (*dichot.transreas*). We will store the item fit results in a new object called *item.fit*, and then format it into a dataframe for easy manipulation and exporting:
+```{r}
+item.fit <- tam.fit(dichot.transreas) 
+item.fit <- as.data.frame(item.fit$itemfit)
+```
+
+Next, we will request a summary of the numeric fit statistics using the *summary()* function:
+```{r}
+summary(item.fit)
+```
+
+The *item.fit* object includes mean square error (MSE) and standardized (t) versions of the Outfit and Infit statistics for Rasch models.These statistics are summaries of the residuals associated with each item. The *Outfit* and *Infit* statistics are the MSE versions and the *Outfit_t* and *Infit_t* statistics are the standardized versions of the statistics. TAM also reports a p value for the standardized fit statistics (*Outfit_p* and *Infit_p*), along with adjusted significance values (*Infit_pholm* and *Outfit_pholm*).
+
+In general, the MSE versions of Outfit and Infit are expected to be close to 1.00 and the standardized versions of Outfit and Infit are expected to be around 0.00 when data fit the Rasch model expectations. We discuss fit analysis in more detail in Chapter 3.
 
 ### Person Parameters
-Get the person ability by using `tam.wle` function
 
+The next step in our analysis is to examine person location parameters (i.e., person achievement or ability estimates). When the default MMLE method is used to estimate the dichotomous Rasch model, person parameters are calculated after the item locations are estimated. As a result, the person estimation procedure for this model requires additional iterations.
+
+In the following code, we calculate person locations that correspond to our model using the *tam.wle()* function with the dichotomous Rasch model object (*dichot.transreas*). We stored the results in a new data frame called *achievement*, and then requested a summary of the estimation results using *summary()*:
 ```{r}
-Person_ability <- tam.wle(Di_Rasch_model)
-# View(Person_ability)
-# In the data frame above, the `theta` is the person's ability measure on a logit scale.
-mean(Person_ability$theta) # The average ability for test-taker is -0.056.
-sd(Person_ability$theta) # The standard deviation for test-taker ability measures is 1.28.
-mean(Person_ability$error) # The mean Standard Error for test-taker ability measures is 1.023.
+achievement <- as.data.frame(tam.wle(dichot.transreas))
 ``` 
 
-Visualize the Person ability measures using a simple histogram
+We can examine the achievement data frame by clicking on it in the *Environment* pane of R Studio or by using the *View()* function with the *achievement* object: 
 ```{r}
-hist(Person_ability$theta)
+View(achievement)
 ```
 
-Calculate the Person fit statistics
+The *achievement* data frame includes the following variables:
+
+* **pid**: Person identification number (based on person ordering in the item response matrix)
+* **N.items**: Number of scored item responses for each person
+* **PersonScores**: Sum of scored item responses for each person
+* **PersonMax**: Maximum possible score for item responses
+* **theta**: Person location estimate on the logit scale that represents the latent variable. Assuming that the responses are scored such that lower scores (x = 0) indicate lower locations on the latent variable (e.g., incorrect, negative, or absent responses), then *lower* person location estimates on the logit scale indicate persons who have *lower* locations on the latent variable (i.e., lower achievement, ability, agreeableness, etc.). On the other hand, *higher* person estimates on the logit scale indicate persons who have higher locations on the latent variable (i.e., higher achievement, ability, agreeableness, etc.). 
+* **error**: Standard error for person location estimate. Larger standard errors indicate less-precise estimates. Standard errors are reported on the same logit scale as person locations.
+* **WLE.rel**: Reliability of person separation statistic. This value is interpreted similarly to Cronbach's alpha (Cronbach, 1951) when there is good fit between the data and the Rasch model (Andrich, 1982). However, it is important to note that these coefficients are not equivalent because alpha is based on an assumption of linearity and the Rasch reliabilty of separation statistic is based on a linear, interval-level scale when good model-data fit (discussed in Chapter 3) is observed.
+
+
+## Descriptive Statistics for Person Locations
+
+Next, we will calculate descriptive statistics to better understand the distribution of the person estimates. We will do so using the *summary()* function with the *achievement* object:
 ```{r}
-Di_Person_fit <- tam.personfit(Di_Rasch_model) 
-head(Di_Person_fit)
+summary(achievement)
 ```
 
-### Summarize the results in a table
-> For Item Calibration Table
-
+We can also visualize the person location estimates using a simple histogram by using the *hist()* function. In our plot, we specified a custom title using *main =* and a custom x-axis label using *xlab =*:
 ```{r}
-# Set up the contents for table2
-Table2 <- data.frame()
-Table2 <- setNames(data.frame(matrix(ncol = 8, nrow = 10)), c("TaskID", "PropCorrect", "Delta","SE","Outfit","Outfit_P","Infit","Infit_P"))
-# Calculate the proportion correct (you can also type in these values by hand from the previous outcome)
-TaskCorrect <- apply(Di_Rasch_data, 2, sum)
-PropCorrect <- percent(TaskCorrect/425)
-Table2$TaskID <- 1:10
-Table2$PropCorrect <- PropCorrect
-Table2$Delta <- difficulty$xsi
-Table2$SE <- difficulty$se.xsi
-Table2$Outfit <- Di_Item_fit[["itemfit"]][["Outfit"]]
-Table2$Outfit_P <- Di_Item_fit[["itemfit"]][["Outfit_p"]]
-Table2$Infit <- Di_Item_fit[["itemfit"]][["Infit"]]
-Table2$Infit_P <- Di_Item_fit[["itemfit"]][["Infit_p"]]
-# Sort the table 2 by Item difficulty
-Table2 <- Table2[order(-PropCorrect),]
+hist(achievement$theta, main = "Histogram of Person Achievement Estimates \nfor the Transitive Reasoning Data",
+     xlab = "Person Achievement Estimates in Logits") 
 ```
 
-> For Person calibration table
+## Person Fit Statistics
+As a final step in our preliminary person analysis, we will conduct a brief exploration of person fit statistics. We explore person fit in more detail in Chapter 3 of this book.
 
+To calculate numeric person fit statistics, we will use the function *tam.personfit()* from TAM on the model object (*dichot.transreas*). We will store the person fit results in a new object called *person.fit*, which is a data frame:
 ```{r}
-# Set up the contents for table3
-Table3 <- data.frame()
-Table3 <- setNames(data.frame(matrix(ncol = 8, nrow = 425)), c("TestTakerID", "PropCorrect", "Theta","SE","Outfit","Outfit_t","Infit","Infit_t"))
-# Calculate the Proportion Correct
-Person_Score <- rowSums(Di_Rasch_data, na.rm=FALSE) 
-Person_PropCorrect <- Person_Score/10
-Table3$TestTakerID <- 1:425
-Table3$PropCorrect <- Person_PropCorrect
-Table3$Theta <- Person_ability$theta
-Table3$SE <- Person_ability$error
-Table3$Outfit <- Di_Person_fit$outfitPerson
-Table3$Outfit_t <- Di_Person_fit$outfitPerson_t
-Table3$Infit <- Di_Person_fit$infitPerson
-Table3$Infit_t <- Di_Person_fit$infitPerson_t 
-# Note here the TAM package only report t value instead of p value. However, you still can calculate that by yourself if you need it.
+person.fit <- tam.personfit(dichot.transreas) 
 ```
 
-## Runing the Dichotomous Rasch Model with JML Method
+Next, we will request a summary of the numeric person fit statistics using the *summary()* function:
+```{r}
+summary(person.fit)
+```
 
-I just noticed that we can also use the **tam.jml()** function to run the Dichotomous Rasch Model using the JML method, which is the same estimation method with the Winstep software. Most of your code will be the same with the previous example. This section will give to an example to run the Dichotomous Rasch Model with JML Method.
+The *person.fit* object includes mean square error (MSE) and standardized (t) versions of the person Outfit and Infit statistics for Rasch models.These statistics are summaries of the residuals associated with each person The *Outfit* and *Infit* statistics are the MSE versions and the *Outfit_t* and *Infit_t* statistics are the standardized versions of the statistics. 
 
+In general, the MSE versions of Outfit and Infit are expected to be close to 1.00 and the standardized versions of Outfit and Infit are expected to be around 0.00 when data fit the Rasch model expectations. We discuss fit analysis in more detail in Chapter 3.
+
+### Summarize the results in tables
+As a final step, we will create tables that summarize the calibrations of the items and persons from our dichotomous Rasch model analysis. This type of table is useful for reporting the results from Rasch model analyses because it provides a quick overview of the location estimates and numeric model-data fit statistics for the items and persons in the analysis.
+
+## Item calibration table:
+```{r}
+
+# Calculate the proportion correct for each task:
+
+TaskCorrect <- apply(transreas.responses, 2, sum)
+PropCorrect <- (TaskCorrect/ncol(transreas.responses))
+
+Table1 <- cbind.data.frame(item.fit$parameter, 
+                           PropCorrect,
+                           difficulty$xsi,
+                           difficulty$se.xsi,
+                           item.fit$Outfit,
+                           item.fit$Outfit_t,
+                           item.fit$Infit,
+                           item.fit$Infit_t)
+names(Table1) <- c("Task ID", "Proportion Correct", "Item Location","Item SE","Outfit MSE","Std. Outfit", "Infit MSE","Std. Infit")                           
+
+# Sort Table 1 by Item difficulty:
+Table1 <- Table1[order(-Table1$`Item Location`),]
+```
+
+## Person calibration table:
+```{r}
+
+# calculate proportion correct for persons:
+PersonPropCorrect <- achievement$PersonScores / achievement$PersonMax
+
+Table2 <- cbind.data.frame(achievement$pid,
+                          PersonPropCorrect,
+                          achievement$theta,
+                          achievement$error,
+                          person.fit$outfitPerson,
+                          person.fit$outfitPerson_t,
+                          person.fit$infitPerson,
+                          person.fit$infitPerson_t)
+                          
+names(Table2) <- c("Person ID", "Proportion Correct", "Person Location","Person SE","Outfit MSE","Std. Outfit", "Infit MSE","Std. Infit")
+
+```
+
+### Runing the Dichotomous Rasch Model with Joint Maximum Likelihood Estimation
+
+We can also use the *tam.jml()* function to estimate the dichotomous Rasch model using Joint Maximum Likelihood Estimation (JMLE), which is the same estimation method that is used in the Facets software program (Linacre, 2020b) and the Winsteps software program (Linacre, 2020b), which are popular standlone software programs for Rasch analyses.
+
+With the exception of the model estimation code, most of the code for the JMLE approach is the same as the previous analysis with MMLE. Accordingly, we provide fewer explanations in our presentation of this code.
+
+
+## Estimate the Dichotomous Rasch Model using JMLE
+We already prepared the transitive reasoning data for analysis when we checked the data and isolated the item response matrix (*transreas.responses*) earlier in this chapter. We can begin our analysis using the *tam.jml()* function with this response matrix:
 ```{r results='hide'}
 # Running the Dichotomous Rasch Model use tam.jml() function
-Di_Rasch_model_jml <- tam.jml(Di_Rasch_data)
+jmle.dichot.transreas <- tam.jml(transreas.responses)
 ```
 
 ### Overall Model Summary
-
 ```{r}
-# Check the summary
-summary(Di_Rasch_model_jml)
-# Plot the person-item map
-difficulty <- Di_Rasch_model_jml$xsi
-wrightMap(Di_Rasch_data,difficulty)
+# Request a summary of the model results
+summary(jmle.dichot.transreas)
 ```
 
-### Item Parameters
-First of all, let's pull out the item parameters from your model.
+### JMLE Wright Map
+
+When the JMLE estimation method is used, we need to specify the item location estimates and the person location estimates as vectors in the plotting function for the Wright Map. We will also use a different function to plot the Wright Map: *wrightMap()*, which takes arguments for the item and person locations.
+
+In the following code, we saved the item locations in a vector called *difficulty*, and the person locations in a vector called *theta*. Then, we used these vectors as arguments in the *wrightMap()* function to create the Wright Map:
 ```{r}
-difficulty <- Di_Rasch_model_jml$xsi
-head(difficulty) 
-mean(difficulty) # The mean difficulty of the tasks is -1.985
-sd(difficulty) # The standard deviation for task difficulty is 1.595
+jmle.difficulty <- jmle.dichot.transreas$xsi
+theta <- jmle.dichot.transreas$theta
+wrightMap(thetas = theta, thresholds = jmle.difficulty, show.thr.lab=FALSE, main.title = "Transitive Reasoning Wright Map: JMLE")
 ```
 
-- The 'xsi' column denotes the item difficulty in a logit scale; 'se.xsi' is the standard error for each item. The standard error is an estimate of the precision of the item difficulty estimates, where larger standard errors indicate less precise estimates.
+### JMLE Item Parameters:
 
-- Since the `xsi` indicates the item difficulty, higher values indicate more-difficult items (higher levels of the construct are required for a positive response). For instance, item 9 is the hardest item ( `xsi` = 1.00), whereas item 6 is the easiest item (`xsi` = -4.07).
-
-We can also visualize the item difficulty using a simple histogram
+When we plotted the Wright Map, we created an object with the item difficulty parameters. We can find the standard errors for the item estimates by using the $ operator to extract *errorP* from the model results. 
 ```{r}
-hist(difficulty) 
+jmle.item.se <- jmle.dichot.transreas$errorP
 ```
 
-Now let's calculate the Item fit statistics
+Next, we will combine the item ids, item location estimates, and item standard errors in a data frame:
 ```{r}
-Di_fit <- tam.jml.fit(Di_Rasch_model_jml) 
-head(Di_fit$fit.item)
+jmle.item.estimates <- cbind.data.frame(c(1:10),
+                                        jmle.difficulty,
+                                        jmle.item.se)
+names(jmle.item.estimates) <- c("Item ID", "Item Location", "Item Location SE")
 ```
 
-### Person Parameters and fit statistics
-
+Now we can examine the item parameters in more detail by viewing the *jmle.item.estimates* object in the preview window, calculating summary statistics, and plotting a simple histogram of the person location estimates:
 ```{r}
-head(Di_fit$fit.person)
-# View Person Scores and Person ability, which is the "theta"
-# In the data frame above, the `theta` is the person's ability measure on a logit scale.
-mean(Di_Rasch_model_jml$theta) # The average ability for test-taker is almost zero.
-sd(Di_Rasch_model_jml$theta) # The standard deviation for test-taker ability measures is 1.472.
-mean(Di_Rasch_model_jml[["errorWLE"]]) # The mean Standard Error for test-taker ability measures is 1.025.
-``` 
-
-Visualize the Person ability measures using a simple histogram
-```{r}
-hist(Di_Rasch_model_jml$theta)
+View(jmle.item.estimates)
+summary(jmle.item.estimates)
+sd(jmle.item.estimates$`Item Location`)
+hist(jmle.item.estimates$`Item Location`, main = "Histogram of Item Location Estimates \nfor the Transitive Reasoning Data: JMLE", xlab = "Item Location Estimates in Logits") 
 ```
 
-### Compare the results of estimated parameters between JML and MML method
+### JMLE Person Parameters:
+Unlike the MMLE estimation approach, the JMLE approach calculates item parameters and person parameters in the same step. As a result, we do not need to use a separate function to find the person parameter estimates from our model. 
 
+When we plotted the Wright Map, we already saved the theta estimates in a vector called *thetas*. We can find the standard errors for the person estimates by using the $ operator to extract *errorWLE* from the model results:
 ```{r}
-plot(Di_Rasch_model_jml$xsi, Di_Rasch_model$xsi$xsi, pch=16,
-xlab=expression(paste(xi[i], "(JML)")),
-ylab=expression(paste(xi[i], "(MML)")),
-main="Item Parameter Estimate Comparison")
-lines(c(-5,5), c(-5,5), col="gray" )
+jmle.person.se <- jmle.dichot.transreas$errorWLE
+```
+
+Next, we will combine the person ids, location estimates, and standard errors in a data frame:
+```{r}
+jmle.person.estimates <- cbind.data.frame(transreas$Student, theta, jmle.person.se)
+names(jmle.person.estimates) <- c("Student ID", "Theta", "Theta SE")
+```
+
+Now we can examine the person parameters in more detail by viewing the *jmle.person.estimates* object in the preview window, calculating summary statistics, and plotting a simple histogram of the person location estimates:
+```{r}
+View(jmle.person.estimates)
+summary(jmle.person.estimates)
+sd(jmle.person.estimates$Theta)
+hist(jmle.person.estimates$Theta, main = "Histogram of Person Location Estimates \nfor the Transitive Reasoning Data: JMLE", xlab = "Person Location Estimates in Logits") 
+```
+
+### JMLE Fit Statistics
+
+When JMLE is used, TAM calculates both person and item fit using a single function: *tam.jml.fit()*. 
+```{r}
+jmle.fit <- tam.jml.fit(jmle.dichot.transreas) 
+```
+
+### JMLE Item Fit Statistics:
+Now that we have calculated fit statistics for items and persons, we will save the item fit statistics in a data frame called *jmle.item.fit*. We can examine the item fit statistics in more detail by printing the *jmle.item.fit* object to the console or preview window and calculating summary statistics:
+```{r}
+jmle.item.fit <- as.data.frame(jmle.fit$fit.item)
+jmle.item.fit
+View(jmle.item.fit)
+summary(jmle.item.fit)
+```
+
+### JMLE Person Fit Statistics:
+Next, we will save the person fit statistics in a data frame called *jmle.person.fit*. We can examine the person fit statistics in more detail by viewing it in the preview window and calculating summary statistics:
+```{r}
+jmle.person.fit <- as.data.frame(jmle.fit$fit.person)
+View(jmle.person.fit)
+summary(jmle.person.fit)
+```
+
+### Summarizing results from the JMLE dichotomous Rasch model analysis
+Next, we will create summary tables for the item and person estimates using a similar approach as we used for the MMLE analysis earlier in this chapter. 
+
+
+## JMLE item calibration table:
+```{r}
+
+# Calculate the proportion correct for each task:
+
+TaskCorrect <- apply(transreas.responses, 2, um)
+PropCorrect <- (TaskCorrect/ncol(transreas.responses))
+
+jmle.Table1 <- cbind.data.frame(jmle.item.fit$item, 
+                           PropCorrect,
+                           jmle.difficulty,
+                           jmle.item.se,
+                           item.fit$Outfit,
+                           item.fit$Outfit_t,
+                           item.fit$Infit,
+                           item.fit$Infit_t)
+names(jmle.Table1) <- c("Task ID", "Proportion Correct", "Item Location","Item SE","Outfit MSE","Std. Outfit", "Infit MSE","Std. Infit")                           
+
+# Sort the table by Item difficulty:
+jmle.Table1 <- jmle.Table1[order(-jmle.Table1$`Item Location`),]
+```
+
+## Person calibration table:
+```{r}
+# calculate proportion correct for persons:
+PersonPropCorrect <- achievement$PersonScores / achievement$PersonMax
+
+jmle.Table2 <- cbind.data.frame(jmle.person.estimates$`Student ID`,
+                                PersonPropCorrect,
+                                jmle.person.estimates$Theta,
+                                jmle.person.estimates$`Theta SE`,
+                                jmle.person.fit$outfitPerson,
+                                jmle.person.fit$outfitPerson_t,
+                                jmle.person.fit$infitPerson,
+                                jmle.person.fit$infitPerson_t)
+                                
+names(jmle.Table2) <- c("Person ID", "Proportion Correct", "Person Location","Person SE","Outfit MSE","Std. Outfit", "Infit MSE","Std. Infit")
+
 ```
 
 
-## Example APA-Style Results Write-Up (Transitive Reasoning Test)
+### Compare the estimated item parameters between JMLE and MMLE methods
+
+As a final step in our analysis, we will compare the item location estimates between the JMLE and MMLE methods using a scatterplot and Pearson product-moment correlation. 
+
+```{r}
+plot(difficulty$xsi, jmle.difficulty,
+     pch=16,
+     xlab= "MMLE Estimate",
+     ylab= "JMLE Estimate",
+     main="Item Parameter Estimate Comparison")
+
+cor(difficulty$xsi, jmle.difficulty)
+```
+
+From this analysis, we can see that there is a nearly perfect linear correlation (r = 0.9998954) between the two sets of item estimates.
+
+## Example APA-Style Results Section based on the MMLE results: [NOT UPDATED YET]
 
 Table 1 presents a summary of the results from the analysis of the transitive reasoning data [Sijtsma and Molenaar,2002](https://methods.sagepub.com/book/introduction-to-nonparametric-item-response-theory) using the dichotomous Rasch model ([Rasch, 1960](https://eric.ed.gov/?id=ED419814)). Specifically, the calibration of test participants (*N* = 425) and Tasks (*N* = 10) are summarized using average logit-scale calibrations, standard errors, and model-data fit statistics. Examination of the results indicates that, on average, the task takers were located higher on the logit scale (*M* = -0.056,*SD* = 1.281), compared to Tasks (*M* = -1.936, *SD* = 1.281). This finding suggests that the items were relatively easy for the sample of kids who participated in this transitive reasoning test. However, average values of the Standard Error (*SE*) are slightly higher for Kids (*M* = 1.023) than Tasks (*M* = 0.17), indicating that there may be some issues related to targeting for some of the Kids who participated in the assessment. Average values of model-data fit statistics indicate overall adequate fit to the model, with average Infit and Outfit mean square statistics around 1.00, [and average standardized Infit and Outfit statistics near the expected value of 0.00 when data fit the model.] **This sentence needs rephrase.** This finding of adequate fit to the model supports the interpretation of item and person calibrations on the logit scale as indicators of their locations on the latent variable measured by the test.
 
@@ -306,5 +531,3 @@ Use the simulated data to run Dichotomous Rasch Model using TAM package.
 [Rasch, G. (1960/1980). Probabilistic models for some intelligence and attainment tests.(Copenhagen, Danish Institute for Educational Research), expanded edition (1980) with foreword and afterword by B.D. Wright. Chicago: The University of Chicago Press.](https://eric.ed.gov/?id=ED419814)
 
 [Wright, B. D., & Masters, G. N. (1982). Rating Scale Analysis: Rasch Measurement. Chicago, IL: MESA Press.](https://pdfs.semanticscholar.org/8083/5035228bc338840ed6c67e879b4bcef11e07.pdf?_ga=2.216101590.1797749273.1596845271-1703835138.1596845271)
-
-
